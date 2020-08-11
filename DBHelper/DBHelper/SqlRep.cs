@@ -82,10 +82,6 @@ namespace DBHelper
         {
             foreach (var tableName in tableNames)
             {
-                if (tableName == "UT_FI_PaymentApply")
-                {
-                    var i = 1;
-                }
                 //--delete触发器
                 var insertTrigger = @" create or ALTER TRIGGER [dbo].[{0}InsertTrigger]
                                                  ON [dbo].[{0}]   after  INSERT
