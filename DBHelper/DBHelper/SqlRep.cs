@@ -15,6 +15,18 @@ namespace DBHelper
             var tableNames = db.Query<string>(sql);
             return tableNames;
         }
+        public static IEnumerable<string> GetColumnNames(IDbConnection db)
+        {
+            string sql = @"SELECT COLUMN_NAME,TABLE_NAME FROM INFORMATION_SCHEMA.columns ";
+            var tableNames = db.Query<string>(sql);
+            return tableNames;
+        }
+        //public static IEnumerable<string> GetColumnNames(string tableNames)
+        //{
+        //    string sql = @"SELECT COLUMN_NAME,TABLE_NAME FROM INFORMATION_SCHEMA.columns ";
+        //    var columns = db.Query<string>(sql);
+        //    return columns;
+        //}
         #region Aop And 历史记录表
         /// <summary>
         /// 判断Aop表存不存在,没有则创建
