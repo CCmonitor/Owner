@@ -103,7 +103,12 @@ namespace DBHelper
             }
         }
         #endregion
-        public void DeleteTrigger(IDbConnection db, IEnumerable<string> tableNames)
+        /// <summary>
+        /// 删除所有触发器
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="tableNames"></param>
+        public static void DeleteTrigger(IDbConnection db, IEnumerable<string> tableNames)
         {
             foreach (var tableName in tableNames)
             {
