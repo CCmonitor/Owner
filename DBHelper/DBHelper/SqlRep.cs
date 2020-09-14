@@ -82,11 +82,11 @@ namespace DBHelper
         /// <param name="tableNames"></param> 
         public static void CreateHistory(IDbConnection db, IEnumerable<string> tableNames)
         {
-            var sb1 = new StringBuilder();
             var hasText = false;
             var columnAll = GetColumnNames(db);
             foreach (var tableName in tableNames)
             {
+                var sb1 = new StringBuilder();
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 var historySql = @"CREATE TABLE [dbo].[{0}History](
                                             {1}
