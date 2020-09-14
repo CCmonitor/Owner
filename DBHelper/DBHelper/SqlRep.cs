@@ -15,11 +15,10 @@ namespace DBHelper
             var tableNames = db.Query<string>(sql);
             return tableNames;
         }
-        public static IEnumerable<string> GetColumnNames(IDbConnection db)
+        public static IEnumerable<Columns> GetColumnNames(IDbConnection db)
         {
             string sql = @"SELECT COLUMN_NAME,TABLE_NAME FROM INFORMATION_SCHEMA.columns ";
-            var tableNames = db.Query<string>(sql);
-            return tableNames;
+            return db.Query<Columns>(sql);
         }
         //public static IEnumerable<string> GetColumnNames(string tableNames)
         //{
@@ -110,25 +109,20 @@ namespace DBHelper
         /// <param name="tableNames"></param>
         public static void DeleteTrigger(IDbConnection db, IEnumerable<string> tableNames)
         {
-            foreach (var tableName in tableNames)
+            var sql = "select name from sysobjects where type ='tr' order by name";
+            var triggers = db.Query<string>(sql);
+            foreach (var trigger in triggers)
             {
                 try
                 {
-                    var deleteTrigger = @"drop trigger {0}DeleteTrigger";
-                    deleteTrigger = string.Format(deleteTrigger, tableName);
-                    db.Execute(deleteTrigger);
-
-                    var insertTrigger = @"drop trigger {0}InsertTrigger";
-                    insertTrigger = string.Format(insertTrigger, tableName);
-                    db.Execute(insertTrigger);
-
-                    var updateTrigger = @"drop trigger {0}UpdateTrigger";
-                    updateTrigger = string.Format(updateTrigger, tableName);
-                    db.Execute(updateTrigger);
-                    Console.WriteLine("删除触发器成功: TABLE : " + tableName);
+                    var dropSql = @"drop trigger {0}";
+                    dropSql = string.Format(dropSql, trigger);
+                    db.Execute(dropSql);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex.Message);
+                    continue;
                 }
             }
         }
@@ -140,6 +134,7 @@ namespace DBHelper
         /// <param name="tableNames"></param>
         public static void CreateInsertTrigger(IDbConnection db, IEnumerable<string> tableNames)
         {
+            var columnAll = GetColumnNames(db);
             foreach (var tableName in tableNames)
             {
                 //--delete触发器
@@ -151,24 +146,41 @@ namespace DBHelper
                                                  SELECT @ishand=COUNT(*) FROM Master..SysProcesses WHERE Spid = @@spid AND program_name LIKE '.Net%'
                                                  IF(@ishand>0)
                                                  BEGIN
-                                                 INSERT INTO [dbo].[{0}History]
-                                                 SELECT *,
-                                                 'Add' AS [Aop],0 AS [IsHand],'' AS [HandPC],GETDATE() as OperateTime
-                                                 FROM inserted
+                                                 INSERT INTO {0}History({1},[OperateTime],[Aop], [IsHand],[HandPC])
+                                                 SELECT {2},GetDate() as [OperateTime],'Add' as Aop,0 as [IsHand],'' as [HandPC] from inserted
                                                  END
                                                  ELSE
                                                  BEGIN
                                                  DECLARE @hostname nvarchar(200)
                                                  SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
-                                                  INSERT INTO [dbo].[{0}History]
-                                                 SELECT *,
-                                                 'Add' AS Aop,1 AS [IsHand],@hostname AS [HandPC],GETDATE() as OperateTime
-                                                 FROM inserted
-                                                  END
+                                                 INSERT INTO {0}History
+                                                 ({1},[OperateTime], [Aop], [IsHand],[HandPC])
+                                                 SELECT {2},
+                                                 GetDate() as [OperateTime],'Add' as Aop,1 as [IsHand],@hostname as [HandPC] 
+                                                 from inserted
+                                                 END
                                                  END";
-                insertTrigger = string.Format(insertTrigger, tableName);
+                var insertTag = new List<string>();
+                var selectTag = new List<string>();
+                var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
+                foreach (var colDoc in columns)
+                {
+                    if (colDoc.COLUMN_NAME != "ID" &&
+                        colDoc.COLUMN_NAME != "CreateTime" &&
+                        colDoc.COLUMN_NAME != "UpdateTime" &&
+                        colDoc.COLUMN_NAME != "RowVersion" &&
+                        colDoc.COLUMN_NAME != "CreateUserID" &&
+                        colDoc.COLUMN_NAME != "UpdateUserID")
+                    {
+                        insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
+                        insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}] as [{0}1]", colDoc.COLUMN_NAME));
+                    }
+                }
                 try
                 {
+                    insertTrigger = string.Format(insertTrigger, tableName, string.Join(",", insertTag), string.Join(",", selectTag));
                     db.Execute(insertTrigger, new { TableName = tableName });
                     Console.WriteLine(" TABLE : " + tableName + "   Insert触发器创建成功");
                 }
