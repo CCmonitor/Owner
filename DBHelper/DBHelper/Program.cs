@@ -37,6 +37,9 @@ namespace DBHelper
                             case "5":
                                 SqlRep.CreateDeleteTrigger(db, tableNames);
                                 break;
+                            case "6":
+                                SqlRep.DeleteHistory(db, tableNames);
+                                break;
                             default:
                                 break;
                         }
@@ -62,6 +65,7 @@ namespace DBHelper
             Console.WriteLine("3.创建Insert触发器");//
             Console.WriteLine("4.创建Update触发器");//
             Console.WriteLine("5.创建Delete触发器");//
+            Console.WriteLine("6.删除历史记录表");//
         }
     }
 }

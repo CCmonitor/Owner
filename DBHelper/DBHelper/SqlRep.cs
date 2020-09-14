@@ -56,6 +56,24 @@ namespace DBHelper
             }
         }
 
+        public static void DeleteHistory(IDbConnection db, IEnumerable<string> tableNames)
+        {
+            foreach (var tableName in tableNames)
+            {
+                var historySql = @" drop table {0}History";
+                historySql = string.Format(historySql, tableName);
+                try
+                {
+                    db.Execute(historySql);
+                    Console.WriteLine("删除成功: TABLE : " + tableName);
+                }
+                catch (Exception)
+                {
+                    //Console.WriteLine("删除历史记录表失败:" + ex.Message + " TABLE : " + tableName);
+                }
+            }
+        }
+
         /// <summary>
         /// 根据实体表创建历史记录表
         /// </summary>
