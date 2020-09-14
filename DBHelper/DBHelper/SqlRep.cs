@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace DBHelper
 {
@@ -17,7 +18,7 @@ namespace DBHelper
         }
         public static IEnumerable<Columns> GetColumnNames(IDbConnection db)
         {
-            string sql = @"SELECT COLUMN_NAME,TABLE_NAME FROM INFORMATION_SCHEMA.columns ";
+            string sql = @"SELECT COLUMN_NAME,TABLE_NAME,DATA_TYPE,IS_NULLABLE FROM INFORMATION_SCHEMA.columns ";
             return db.Query<Columns>(sql);
         }
         //public static IEnumerable<string> GetColumnNames(string tableNames)
@@ -81,11 +82,24 @@ namespace DBHelper
         /// <param name="tableNames"></param> 
         public static void CreateHistory(IDbConnection db, IEnumerable<string> tableNames)
         {
+            var sb1 = new StringBuilder();
+            var hasText = false;
+            var columnAll = GetColumnNames(db);
             foreach (var tableName in tableNames)
             {
-                var historySql = @" select * into {0}History  from  {0}
-                          left outer join Aop on Aop.Aop={0}.f_id where 1=2";
-                historySql = string.Format(historySql, tableName);
+                var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
+                var historySql = @"CREATE TABLE [dbo].[{0}History](
+                                            {1}
+                                            OperateTime [DateTime] NOT NULL, 
+                                            [Aop] [nvarchar](6) NOT NULL, 
+                                            [IsHand] [bit] {3} NULL,
+                                            [HandPC][nvarchar](200) {3} NULL ) 
+                                            ON [PRIMARY] {2}";
+                foreach (var column in columns)
+                {
+                    sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                }
+                historySql = string.Format(historySql, tableName, sb1.ToString(), hasText ? "TEXTIMAGE_ON [PRIMARY]" : "", "NOT");
                 try
                 {
                     db.Execute(historySql);
