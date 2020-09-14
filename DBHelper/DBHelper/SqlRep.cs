@@ -56,6 +56,7 @@ namespace DBHelper
             }
         }
 
+
         public static void DeleteHistory(IDbConnection db, IEnumerable<string> tableNames)
         {
             foreach (var tableName in tableNames)
@@ -102,6 +103,30 @@ namespace DBHelper
             }
         }
         #endregion
+        public void DeleteTrigger(IDbConnection db, IEnumerable<string> tableNames)
+        {
+            foreach (var tableName in tableNames)
+            {
+                try
+                {
+                    var deleteTrigger = @"drop trigger {0}DeleteTrigger";
+                    deleteTrigger = string.Format(deleteTrigger, tableName);
+                    db.Execute(deleteTrigger);
+
+                    var insertTrigger = @"drop trigger {0}InsertTrigger";
+                    insertTrigger = string.Format(insertTrigger, tableName);
+                    db.Execute(insertTrigger);
+
+                    var updateTrigger = @"drop trigger {0}UpdateTrigger";
+                    updateTrigger = string.Format(updateTrigger, tableName);
+                    db.Execute(updateTrigger);
+                    Console.WriteLine("删除触发器成功: TABLE : " + tableName);
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
 
         /// <summary>
         /// 创建insert触发器
