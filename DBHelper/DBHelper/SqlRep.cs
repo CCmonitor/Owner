@@ -98,11 +98,13 @@ namespace DBHelper
                 foreach (var column in columns)
                 {
                     sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                    sb1.Append(string.Format(" [{0}1] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
                 }
                 historySql = string.Format(historySql, tableName, sb1.ToString(), hasText ? "TEXTIMAGE_ON [PRIMARY]" : "", "NOT");
                 try
                 {
                     db.Execute(historySql);
+                    Console.WriteLine("创建历史记录表成功 TABLE : " + tableName);
                 }
                 catch (Exception ex)
                 {
@@ -217,6 +219,7 @@ namespace DBHelper
         /// <param name="tableNames"></param>
         public static void CreateDeleteTrigger(IDbConnection db, IEnumerable<string> tableNames)
         {
+            var columnAll = GetColumnNames(db);
             foreach (var tableName in tableNames)
             {
                 //--delete触发器
@@ -228,24 +231,42 @@ namespace DBHelper
                                                     SELECT @ishand=COUNT(*) FROM Master..SysProcesses WHERE Spid = @@spid AND program_name LIKE '.Net%'
                                                     IF(@ishand>0)
                                                     BEGIN
-                                                    INSERT INTO [dbo].[{0}History]
-                                                    SELECT *,
-                                                    'Delete' AS [Aop],0 AS [IsHand],'' AS [HandPC],GETDATE() as OperateTime
+                                                    INSERT INTO {0}History({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                    Select {2}
+                                                    GETDATE() as OperateTime,'Delete' AS [Aop],0 AS [IsHand],'' AS [HandPC]
                                                     FROM deleted
                                                     END
                                                     ELSE
                                                     BEGIN
                                                     DECLARE @hostname nvarchar(200)
                                                     SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
-                                                    INSERT INTO [dbo].[{0}History]
-                                                    SELECT *,
-                                                    'Delete' AS Aop,1 AS [IsHand],@hostname AS [HandPC],GETDATE() as OperateTime
+                                                    INSERT INTO {0}History([ID],{1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                    select {2},GETDATE() as [OperateTime],
+                                                    'Delete' AS Aop,1 AS [IsHand],@hostname AS [HandPC]
                                                     FROM deleted
                                                     END
                                                     END";
-                deleteTrigger = string.Format(deleteTrigger, tableName);
+                var insertTag = new List<string>();
+                var selectTag = new List<string>();
+                var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
+                foreach (var colDoc in columns)
+                {
+                    if (colDoc.COLUMN_NAME != "ID" &&
+                        colDoc.COLUMN_NAME != "CreateTime" &&
+                        colDoc.COLUMN_NAME != "UpdateTime" &&
+                        colDoc.COLUMN_NAME != "RowVersion" &&
+                        colDoc.COLUMN_NAME != "CreateUserID" &&
+                        colDoc.COLUMN_NAME != "UpdateUserID")
+                    {
+                        insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
+                        insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}] as [{0}1]", colDoc.COLUMN_NAME));
+                    }
+                }
                 try
                 {
+                    deleteTrigger = string.Format(deleteTrigger, tableName, string.Join(",", insertTag), string.Join(",", selectTag));
                     db.Execute(deleteTrigger, new { TableName = tableName });
                     Console.WriteLine(" TABLE : " + tableName + "   Delete触发器创建成功");
                 }
@@ -253,7 +274,6 @@ namespace DBHelper
                 {
                     Console.WriteLine(ex.Message + " TABLE : " + tableName);
                 }
-
             }
         }
         /// <summary>
@@ -263,6 +283,7 @@ namespace DBHelper
         /// <param name="tableNames"></param>
         public static void CreateUpdateTrigger(IDbConnection db, IEnumerable<string> tableNames)
         {
+            var columnAll = GetColumnNames(db);
             foreach (var tableName in tableNames)
             {
 
@@ -279,14 +300,15 @@ namespace DBHelper
                                                    AND program_name LIKE '.Net%'
                                                    IF (@ishand > 0)
                                                    BEGIN
-                                                   	INSERT INTO [dbo].[{0}History]
-                                                   SELECT *,
+                                                   	INSERT INTO [dbo].[{0}History]({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                   SELECT {2},[OperateTime],
                                                    		'Update' AS Aop,
                                                    		0 AS [IsHand],
                                                    		'' AS [HandPC],GETDATE() as OperateTime
                                                    	FROM
                                                    		inserted 
                                                    END
+
                                                    ELSE
                                                    
                                                    BEGIN
@@ -297,8 +319,8 @@ namespace DBHelper
                                                    	Master..SysProcesses
                                                    WHERE
                                                    	Spid = @@spid 
-                                                   INSERT INTO [dbo].[{0}History]
-                                                   SELECT *,
+                                                   INSERT INTO [dbo].[{0}History]({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                   SELECT {2},[OperateTime],
                                                    		'Update' AS Aop,
                                                    		1 AS [IsHand],
                                                    		@hostname AS [HandPC],GETDATE() as OperateTime
@@ -306,9 +328,27 @@ namespace DBHelper
                                                    		inserted 
                                                    end
                                                    END";
-                updateTrigger = string.Format(updateTrigger, tableName);
+                var insertTag = new List<string>();
+                var selectTag = new List<string>();
+                var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
+                foreach (var colDoc in columns)
+                {
+                    if (colDoc.COLUMN_NAME != "ID" &&
+                        colDoc.COLUMN_NAME != "CreateTime" &&
+                        colDoc.COLUMN_NAME != "UpdateTime" &&
+                        colDoc.COLUMN_NAME != "RowVersion" &&
+                        colDoc.COLUMN_NAME != "CreateUserID" &&
+                        colDoc.COLUMN_NAME != "UpdateUserID")
+                    {
+                        insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
+                        insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}] as [{0}1]", colDoc.COLUMN_NAME));
+                    }
+                }
                 try
                 {
+                    updateTrigger = string.Format(updateTrigger, tableName, string.Join(",", insertTag), string.Join(",", selectTag));
                     db.Execute(updateTrigger, new { TableName = tableName });
                     Console.WriteLine(" TABLE : " + tableName + "   Update触发器创建成功");
                 }
