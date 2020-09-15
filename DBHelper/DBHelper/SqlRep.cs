@@ -237,7 +237,7 @@ namespace DBHelper
                                                  SELECT @ishand=COUNT(*) FROM Master..SysProcesses WHERE Spid = @@spid AND program_name LIKE '.Net%'
                                                  IF(@ishand>0)
                                                  BEGIN
-                                                 INSERT INTO {0}History({1},[OperateTime],[Aop], [IsHand],[HandPC])
+                                                 INSERT INTO {0}History([F_Id],{1},[OperateTime],[Aop], [IsHand],[HandPC])
                                                  SELECT {2},GetDate() as [OperateTime],'Add' as Aop,0 as [IsHand],'' as [HandPC] from inserted
                                                  END
                                                  ELSE
@@ -245,7 +245,7 @@ namespace DBHelper
                                                  DECLARE @hostname nvarchar(200)
                                                  SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
                                                  INSERT INTO {0}History
-                                                 ({1},[OperateTime], [Aop], [IsHand],[HandPC])
+                                                 ([F_Id],{1},[OperateTime], [Aop], [IsHand],[HandPC])
                                                  SELECT {2},
                                                  GetDate() as [OperateTime],'Add' as Aop,1 as [IsHand],@hostname as [HandPC] 
                                                  from inserted
@@ -305,7 +305,7 @@ namespace DBHelper
                                                     SELECT @ishand=COUNT(*) FROM Master..SysProcesses WHERE Spid = @@spid AND program_name LIKE '.Net%'
                                                     IF(@ishand>0)
                                                     BEGIN
-                                                    INSERT INTO {0}History({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                    INSERT INTO {0}History([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
                                                     Select {2}
                                                     ,GETDATE() as OperateTime,'Delete' AS [Aop],0 AS [IsHand],'' AS [HandPC]
                                                     FROM deleted
@@ -314,7 +314,7 @@ namespace DBHelper
                                                     BEGIN
                                                     DECLARE @hostname nvarchar(200)
                                                     SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
-                                                    INSERT INTO {0}History({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                    INSERT INTO {0}History([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
                                                     select {2},GETDATE() as [OperateTime],
                                                     'Delete' AS Aop,1 AS [IsHand],@hostname AS [HandPC]
                                                     FROM deleted
@@ -373,15 +373,13 @@ namespace DBHelper
                                                    AND program_name LIKE '.Net%'
                                                    IF (@ishand > 0)
                                                    BEGIN
-                                                   	INSERT INTO [dbo].[{0}History]({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                   	INSERT INTO [dbo].[{0}History]([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
                                                    SELECT {2},GetDate() as [OperateTime],
                                                    		'Update' AS Aop,
                                                    		0 AS [IsHand],
                                                    		'' AS [HandPC]
                                                    	FROM
                                                    		inserted 
-                                                    update { 0}History set {4} from deleted
-                                                    where {0}History.ID=deleted.ID and {0}History.OperateTime=deleted.OperateTime
                                                    END
                                                    ELSE
                                                    BEGIN
@@ -392,15 +390,13 @@ namespace DBHelper
                                                    	Master..SysProcesses
                                                    WHERE
                                                    	Spid = @@spid 
-                                                   INSERT INTO [dbo].[{0}History]({1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                   INSERT INTO [dbo].[{0}History]([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
                                                    SELECT {2},GetDate() as [OperateTime],
                                                    		'Update' AS Aop,
                                                    		1 AS [IsHand],
                                                    		@hostname AS [HandPC]
                                                    	FROM
                                                    		inserted 
-                                                     update { 0}History set {4} from deleted
-                                                    where {0}History.ID=deleted.ID and {0}History.OperateTime=deleted.OperateTime
                                                    end
                                                    END";
                 var insertTag = new List<string>();
