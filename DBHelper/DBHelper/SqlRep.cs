@@ -18,7 +18,7 @@ namespace DBHelper
         }
         public static IEnumerable<Columns> GetColumnNames(IDbConnection db)
         {
-            string sql = @"SELECT COLUMN_NAME,TABLE_NAME,DATA_TYPE,IS_NULLABLE FROM INFORMATION_SCHEMA.columns ";
+            string sql = @"SELECT COLUMN_NAME,TABLE_NAME,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.columns ";
             return db.Query<Columns>(sql);
         }
         //public static IEnumerable<string> GetColumnNames(string tableNames)
@@ -90,21 +90,92 @@ namespace DBHelper
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 var historySql = @"CREATE TABLE [dbo].[{0}History](
                                             {1}
-                                            OperateTime [DateTime] NOT NULL, 
+                                            [OperateTime] [DateTime] NOT NULL, 
                                             [Aop] [nvarchar](6) NOT NULL, 
                                             [IsHand] [bit] {3} NULL,
                                             [HandPC][nvarchar](200) {3} NULL ) 
                                             ON [PRIMARY] {2}";
                 foreach (var column in columns)
                 {
+                    if (column.COLUMN_NAME == "F_InvoiceDate")
+                    {
+                        var xxx = 111;
+                    }
                     if (column.COLUMN_NAME != "F_Id" &&
                         column.COLUMN_NAME != "F_CreateTime" &&
                         column.COLUMN_NAME != "F_ModifyTime" &&
                         column.COLUMN_NAME != "F_CreateUserID" &&
                         column.COLUMN_NAME != "F_ModifyUserId")
                     {
-                        sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
-                        sb1.Append(string.Format(" [{0}1] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                        var sqlType = "";
+                        if (column.DATA_TYPE == "bit")
+                        {
+                            sqlType = "[bit]";
+                        }
+                        else if (column.DATA_TYPE == "datetime")
+                        {
+                            sqlType = "[datetime]";
+                        }
+                        else if (column.DATA_TYPE == "decimal")
+                        {
+                            sqlType = "[decimal](18, 2)";
+                        }
+                        else if (column.DATA_TYPE == "numeric")
+                        {
+                            sqlType = "[decimal](18, 2)";
+                        }
+                        else if (column.DATA_TYPE == "uniqueidentifier")
+                        {
+                            sqlType = "[uniqueidentifier]";
+                        }
+                        else if (column.DATA_TYPE == "int")
+                        {
+                            sqlType = "[int]";
+                        }
+                        else if (column.DATA_TYPE == "nchar")
+                        {
+                            var length = column.CHARACTER_MAXIMUM_LENGTH.HasValue ? column.CHARACTER_MAXIMUM_LENGTH.Value : 8000;
+                            if (length > 4000)
+                            {
+                                sqlType = "[nchar](max)";
+                                Console.WriteLine(tableName + "表的列" + column.COLUMN_NAME + "nchar(max).请检查是否合理");
+                            }
+                            else if (length == -1)
+                            {
+                                sqlType = "[nchar](max)";
+                            }
+                            else
+                            {
+                                sqlType = "[nchar](" + length + ")";
+                            }
+
+                        }
+                        else if (column.DATA_TYPE == "nvarchar" || column.DATA_TYPE == "varchar")
+                        {
+                            var length = column.CHARACTER_MAXIMUM_LENGTH.HasValue ? column.CHARACTER_MAXIMUM_LENGTH.Value : 8000;
+                            if (length > 4000)
+                            {
+                                sqlType = "[nvarchar](max)";
+                                Console.WriteLine(tableName + "表的列" + column.COLUMN_NAME + "长度为nvarchar(max).请检查是否合理");
+                            }
+                            else if (length == -1)
+                            {
+                                sqlType = "[nvarchar](max)";
+                            }
+                            else
+                            {
+                                sqlType = "[nvarchar](" + length + ")";
+                            }
+                            if (length > 4000)
+                            {
+                                hasText = true;
+                            }
+                        }
+                        else {
+                            sqlType = "["+ column.DATA_TYPE + "]";
+                        }
+                        sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, sqlType, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                        sb1.Append(string.Format(" [{0}1] {1} {2} NULL,", column.COLUMN_NAME, sqlType, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
                     }
                 }
                 historySql = string.Format(historySql, tableName, sb1.ToString(), hasText ? "TEXTIMAGE_ON [PRIMARY]" : "", "NOT");
