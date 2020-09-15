@@ -97,8 +97,15 @@ namespace DBHelper
                                             ON [PRIMARY] {2}";
                 foreach (var column in columns)
                 {
-                    sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
-                    sb1.Append(string.Format(" [{0}1] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                    if (column.COLUMN_NAME != "F_Id" &&
+                        column.COLUMN_NAME != "F_CreateTime" &&
+                        column.COLUMN_NAME != "F_ModifyTime" &&
+                        column.COLUMN_NAME != "F_CreateUserID" &&
+                        column.COLUMN_NAME != "F_ModifyUserId")
+                    {
+                        sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                        sb1.Append(string.Format(" [{0}1] {1} {2} NULL,", column.COLUMN_NAME, column.DATA_TYPE, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
+                    }
                 }
                 historySql = string.Format(historySql, tableName, sb1.ToString(), hasText ? "TEXTIMAGE_ON [PRIMARY]" : "", "NOT");
                 try
@@ -181,12 +188,11 @@ namespace DBHelper
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 foreach (var colDoc in columns)
                 {
-                    if (colDoc.COLUMN_NAME != "ID" &&
-                        colDoc.COLUMN_NAME != "CreateTime" &&
-                        colDoc.COLUMN_NAME != "UpdateTime" &&
-                        colDoc.COLUMN_NAME != "RowVersion" &&
-                        colDoc.COLUMN_NAME != "CreateUserID" &&
-                        colDoc.COLUMN_NAME != "UpdateUserID")
+                    if (colDoc.COLUMN_NAME != "F_Id" &&
+                        colDoc.COLUMN_NAME != "F_CreateTime" &&
+                        colDoc.COLUMN_NAME != "F_ModifyTime" &&
+                        colDoc.COLUMN_NAME != "F_CreateUserID" &&
+                        colDoc.COLUMN_NAME != "F_ModifyUserId")
                     {
                         insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
                         insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
@@ -233,14 +239,14 @@ namespace DBHelper
                                                     BEGIN
                                                     INSERT INTO {0}History({1},[OperateTime],[Aop],[IsHand],[HandPC])
                                                     Select {2}
-                                                    GETDATE() as OperateTime,'Delete' AS [Aop],0 AS [IsHand],'' AS [HandPC]
+                                                    ,GETDATE() as OperateTime,'Delete' AS [Aop],0 AS [IsHand],'' AS [HandPC]
                                                     FROM deleted
                                                     END
                                                     ELSE
                                                     BEGIN
                                                     DECLARE @hostname nvarchar(200)
                                                     SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
-                                                    INSERT INTO {0}History([ID],{1},[OperateTime],[Aop],[IsHand],[HandPC])
+                                                    INSERT INTO {0}History({1},[OperateTime],[Aop],[IsHand],[HandPC])
                                                     select {2},GETDATE() as [OperateTime],
                                                     'Delete' AS Aop,1 AS [IsHand],@hostname AS [HandPC]
                                                     FROM deleted
@@ -251,12 +257,11 @@ namespace DBHelper
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 foreach (var colDoc in columns)
                 {
-                    if (colDoc.COLUMN_NAME != "ID" &&
-                        colDoc.COLUMN_NAME != "CreateTime" &&
-                        colDoc.COLUMN_NAME != "UpdateTime" &&
-                        colDoc.COLUMN_NAME != "RowVersion" &&
-                        colDoc.COLUMN_NAME != "CreateUserID" &&
-                        colDoc.COLUMN_NAME != "UpdateUserID")
+                    if (colDoc.COLUMN_NAME != "F_Id" &&
+                        colDoc.COLUMN_NAME != "F_CreateTime" &&
+                        colDoc.COLUMN_NAME != "F_ModifyTime" &&
+                        colDoc.COLUMN_NAME != "F_CreateUserID" &&
+                        colDoc.COLUMN_NAME != "F_ModifyUserId")
                     {
                         insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
                         insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
@@ -301,10 +306,10 @@ namespace DBHelper
                                                    IF (@ishand > 0)
                                                    BEGIN
                                                    	INSERT INTO [dbo].[{0}History]({1},[OperateTime],[Aop],[IsHand],[HandPC])
-                                                   SELECT {2},[OperateTime],
+                                                   SELECT {2},GetDate() as [OperateTime],
                                                    		'Update' AS Aop,
                                                    		0 AS [IsHand],
-                                                   		'' AS [HandPC],GETDATE() as OperateTime
+                                                   		'' AS [HandPC]
                                                    	FROM
                                                    		inserted 
                                                    END
@@ -320,10 +325,10 @@ namespace DBHelper
                                                    WHERE
                                                    	Spid = @@spid 
                                                    INSERT INTO [dbo].[{0}History]({1},[OperateTime],[Aop],[IsHand],[HandPC])
-                                                   SELECT {2},[OperateTime],
+                                                   SELECT {2},GetDate() as [OperateTime],
                                                    		'Update' AS Aop,
                                                    		1 AS [IsHand],
-                                                   		@hostname AS [HandPC],GETDATE() as OperateTime
+                                                   		@hostname AS [HandPC]
                                                    	FROM
                                                    		inserted 
                                                    end
@@ -333,12 +338,11 @@ namespace DBHelper
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 foreach (var colDoc in columns)
                 {
-                    if (colDoc.COLUMN_NAME != "ID" &&
-                        colDoc.COLUMN_NAME != "CreateTime" &&
-                        colDoc.COLUMN_NAME != "UpdateTime" &&
-                        colDoc.COLUMN_NAME != "RowVersion" &&
-                        colDoc.COLUMN_NAME != "CreateUserID" &&
-                        colDoc.COLUMN_NAME != "UpdateUserID")
+                    if (colDoc.COLUMN_NAME != "F_Id" &&
+                        colDoc.COLUMN_NAME != "F_CreateTime" &&
+                        colDoc.COLUMN_NAME != "F_ModifyTime" &&
+                        colDoc.COLUMN_NAME != "F_CreateUserID" &&
+                        colDoc.COLUMN_NAME != "F_ModifyUserId")
                     {
                         insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
                         insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
