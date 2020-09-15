@@ -413,7 +413,7 @@ namespace DBHelper
                         insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
                         insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
                         selectTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
-                        selectTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}] as [{0}1]", colDoc.COLUMN_NAME));
                     }
                 }
                 try
