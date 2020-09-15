@@ -89,7 +89,7 @@ namespace DBHelper
                 var sb1 = new StringBuilder();
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 var historySql = @"CREATE TABLE [dbo].[{0}History](
-                                            F_Id,{1}
+                                            [F_Id] [nvarchar](50) NOT NULL,{1}
                                             [OperateTime] [DateTime] NOT NULL, 
                                             [Aop] [nvarchar](6) NOT NULL, 
                                             [IsHand] [bit] {3} NULL,
@@ -167,8 +167,9 @@ namespace DBHelper
                                 hasText = true;
                             }
                         }
-                        else {
-                            sqlType = "["+ column.DATA_TYPE + "]";
+                        else
+                        {
+                            sqlType = "[" + column.DATA_TYPE + "]";
                         }
                         sb1.Append(string.Format(" [{0}] {1} {2} NULL,", column.COLUMN_NAME, sqlType, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
                         sb1.Append(string.Format(" [{0}1] {1} {2} NULL,", column.COLUMN_NAME, sqlType, column.IS_NULLABLE.ToUpper() == "YES" ? "" : "Not"));
@@ -379,10 +380,10 @@ namespace DBHelper
                                                    		'' AS [HandPC]
                                                    	FROM
                                                    		inserted 
+                                                    update { 0}History set {4} from deleted
+                                                    where {0}History.ID=deleted.ID and {0}History.OperateTime=deleted.OperateTime
                                                    END
-
                                                    ELSE
-                                                   
                                                    BEGIN
                                                    DECLARE @updatetime datetime = GETDATE()
                                                    DECLARE @hostname nvarchar (200) SELECT
@@ -398,10 +399,13 @@ namespace DBHelper
                                                    		@hostname AS [HandPC]
                                                    	FROM
                                                    		inserted 
+                                                     update { 0}History set {4} from deleted
+                                                    where {0}History.ID=deleted.ID and {0}History.OperateTime=deleted.OperateTime
                                                    end
                                                    END";
                 var insertTag = new List<string>();
                 var selectTag = new List<string>();
+                var setTag = new List<string>();
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 foreach (var colDoc in columns)
                 {
@@ -414,7 +418,7 @@ namespace DBHelper
                         insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
                         insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
                         selectTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
-                        selectTag.Add(string.Format("[{0}] as [{0}1]", colDoc.COLUMN_NAME));
+                        setTag.Add(string.Format("[{0}1]=deleted.{0}", colDoc.COLUMN_NAME));
                     }
                 }
                 try
