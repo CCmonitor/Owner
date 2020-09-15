@@ -238,7 +238,7 @@ namespace DBHelper
                                                  IF(@ishand>0)
                                                  BEGIN
                                                  INSERT INTO {0}History([F_Id],{1},[OperateTime],[Aop], [IsHand],[HandPC])
-                                                 SELECT {2},GetDate() as [OperateTime],'Add' as Aop,0 as [IsHand],'' as [HandPC] from inserted
+                                                 SELECT [F_Id],{2},GetDate() as [OperateTime],'Add' as Aop,0 as [IsHand],'' as [HandPC] from inserted
                                                  END
                                                  ELSE
                                                  BEGIN
@@ -246,7 +246,7 @@ namespace DBHelper
                                                  SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
                                                  INSERT INTO {0}History
                                                  ([F_Id],{1},[OperateTime], [Aop], [IsHand],[HandPC])
-                                                 SELECT {2},
+                                                 SELECT [F_Id],{2},
                                                  GetDate() as [OperateTime],'Add' as Aop,1 as [IsHand],@hostname as [HandPC] 
                                                  from inserted
                                                  END
@@ -306,7 +306,7 @@ namespace DBHelper
                                                     IF(@ishand>0)
                                                     BEGIN
                                                     INSERT INTO {0}History([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
-                                                    Select {2}
+                                                    Select [F_Id],{2}
                                                     ,GETDATE() as OperateTime,'Delete' AS [Aop],0 AS [IsHand],'' AS [HandPC]
                                                     FROM deleted
                                                     END
@@ -315,7 +315,7 @@ namespace DBHelper
                                                     DECLARE @hostname nvarchar(200)
                                                     SELECT @hostname=hostname FROM Master..SysProcesses WHERE Spid = @@spid
                                                     INSERT INTO {0}History([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
-                                                    select {2},GETDATE() as [OperateTime],
+                                                    select [F_Id],{2},GETDATE() as [OperateTime],
                                                     'Delete' AS Aop,1 AS [IsHand],@hostname AS [HandPC]
                                                     FROM deleted
                                                     END
@@ -374,7 +374,7 @@ namespace DBHelper
                                                    IF (@ishand > 0)
                                                    BEGIN
                                                    	INSERT INTO [dbo].[{0}History]([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
-                                                   SELECT {2},GetDate() as [OperateTime],
+                                                   SELECT [F_Id],{2},GetDate() as [OperateTime],
                                                    		'Update' AS Aop,
                                                    		0 AS [IsHand],
                                                    		'' AS [HandPC]
@@ -391,7 +391,7 @@ namespace DBHelper
                                                    WHERE
                                                    	Spid = @@spid 
                                                    INSERT INTO [dbo].[{0}History]([F_Id],{1},[OperateTime],[Aop],[IsHand],[HandPC])
-                                                   SELECT {2},GetDate() as [OperateTime],
+                                                   SELECT [F_Id],{2},GetDate() as [OperateTime],
                                                    		'Update' AS Aop,
                                                    		1 AS [IsHand],
                                                    		@hostname AS [HandPC]
@@ -401,7 +401,6 @@ namespace DBHelper
                                                    END";
                 var insertTag = new List<string>();
                 var selectTag = new List<string>();
-                var setTag = new List<string>();
                 var columns = columnAll.Where(r => r.TABLE_NAME.ToUpper() == tableName.ToUpper());
                 foreach (var colDoc in columns)
                 {
@@ -414,7 +413,7 @@ namespace DBHelper
                         insertTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
                         insertTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
                         selectTag.Add(string.Format("[{0}]", colDoc.COLUMN_NAME));
-                        setTag.Add(string.Format("[{0}1]=deleted.{0}", colDoc.COLUMN_NAME));
+                        selectTag.Add(string.Format("[{0}1]", colDoc.COLUMN_NAME));
                     }
                 }
                 try
