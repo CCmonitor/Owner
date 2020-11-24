@@ -12,7 +12,7 @@ namespace DBHelper
     {
         public static IEnumerable<string> GetTableNames(IDbConnection db)
         {
-            string sql = @"SELECT Name FROM SysObjects Where XType='U' and name like 'UT_%' and name not like '%History' ORDER BY Name";
+            string sql = @"SELECT Name FROM SysObjects Where XType='U' and name like 'HK_%' and name not like '%History' ORDER BY Name";
             var tableNames = db.Query<string>(sql);
             return tableNames;
         }
